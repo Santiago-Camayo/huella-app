@@ -17,6 +17,16 @@ class AnimalesViewModel : ViewModel() {
         private set
     var detalle by mutableStateOf<Resultado<Animal>?>(null)
         private set
+    var deMiFundacion by mutableStateOf<Resultado<List<Animal>>?>(null)
+        private set
+
+    // HU-16: con el token de una fundación, la API devuelve solo sus animales, también los retirados
+    fun cargarDeMiFundacion() {
+        viewModelScope.launch {
+            deMiFundacion = null
+            deMiFundacion = llamar { Api.servicio.animales(null) }
+        }
+    }
 
     // HU-06: solo los disponibles (la API ya excluye los retirados)
     fun cargarLista() {

@@ -32,7 +32,9 @@ import kotlinx.coroutines.delay
 private val PESTANAS_ADOPTANTE = listOf(
     Pestana("inicio", "⌂", "Inicio"), Pestana("solicitudes", "▤", "Solicitudes"), Pestana("perfil", "♙", "Perfil"),
 )
-private val PESTANAS_FUNDACION = listOf(Pestana("f/solicitudes", "📋", "Solicitudes"), Pestana("f/cuenta", "👤", "Cuenta"))
+private val PESTANAS_FUNDACION = listOf(
+    Pestana("f/solicitudes", "📋", "Solicitudes"), Pestana("f/animales", "🐾", "Animales"), Pestana("f/cuenta", "👤", "Cuenta"),
+)
 
 // HU-02: el rol decide a qué módulo entra el usuario
 private fun inicioDe(usuario: Usuario?) = if (usuario?.rol == "fundacion") "f/solicitudes" else "inicio"
@@ -116,6 +118,16 @@ fun HuellaApp() {
                 }
                 composable("f/solicitud/{id}", arguments = argumentoId) {
                     FundacionSolicitudScreen(solicitudes, idDe(it), volver = { nav.popBackStack() })
+                }
+                composable("f/animales") {
+                    FundacionAnimalesScreen(animales, abrir = { id -> nav.navigate("f/animal/$id") })
+                }
+                composable("f/animal/{id}", arguments = argumentoId) {
+                    FundacionAnimalScreen(
+                        animales, solicitudes, idDe(it),
+                        volver = { nav.popBackStack() },
+                        abrirSolicitud = { id -> nav.navigate("f/solicitud/$id") },
+                    )
                 }
                 composable("f/cuenta") { CuentaScreen(auth, alCerrarSesion) }
             }

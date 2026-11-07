@@ -1,6 +1,27 @@
 package com.example.huella.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import com.example.huella.data.Animal
+import com.example.huella.ui.theme.Borde
+import com.example.huella.ui.theme.Foco
+import com.example.huella.ui.theme.Fondo
+import com.example.huella.ui.theme.Linea
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -115,6 +136,142 @@ fun FundacionSolicitudScreen(vm: SolicitudesViewModel, id: Long, volver: () -> U
                     )
                 }
             }
+        }
+    }
+}
+
+// HU-16: animales de mi fundación en todos los estados, con búsqueda y filtro.
+@Composable
+fun FundacionAnimalesScreen(vm: AnimalesViewModel, abrir: (Long) -> Unit) {
+    LaunchedEffect(Unit) { vm.cargarDeMiFundacion() }
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    var filtro by rememberSaveable { mutableStateOf("todos") }
+    val contexto = LocalContext.current
+    val filtros = listOf("todos", "disponible", "apartado", "adoptado", "retirado")
+
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            BarraSuperior("Animales")
+            OutlinedTextField(
+                busqueda, { busqueda = it },
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                placeholder = { Text("Buscar por nombre", color = TextoSecundario) },
+                leadingIcon = { Text("⌕", fontSize = 20.sp, color = TextoSecundario) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Foco, unfocusedBorderColor = Borde,
+                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                ),
+            )
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+                Arrangement.spacedBy(8.dp),
+            ) {
+                filtros.forEach { clave ->
+                    Chip(if (clave == "todos") "Todos" else nombreEstado(clave), filtro == clave) { filtro = clave }
+                }
+            }
+
+            when (val lista = vm.deMiFundacion) {
+                null -> Cargando()
+                is Resultado.Error -> ErrorConReintento(lista.mensaje, vm::cargarDeMiFundacion)
+                is Resultado.Ok -> {
+                    val visibles = lista.dato.filter {
+                        (filtro == "todos" || it.estadoVisible() == filtro) && it.nombre.contains(busqueda.trim(), ignoreCase = true)
+                    }
+                    if (visibles.isEmpty()) {
+                        Mensaje("🐾", if (lista.dato.isEmpty()) "Aún no tienes animales registrados" else "Sin resultados")
+                    } else {
+                        LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp)) {
+                            items(visibles, key = { it.id }) { FilaAnimal(it) { abrir(it.id) } }
+                        }
+                    }
+                }
+            }
+        }
+        // Registrar un animal con foto es HU-17 (siguiente paso del Sprint 2)
+        FloatingActionButton(
+            { Toast.makeText(contexto, "Registrar animal: llega con la subida de fotos", Toast.LENGTH_SHORT).show() },
+            Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            shape = CircleShape, containerColor = Primario, contentColor = Color.White,
+        ) { Text("+", fontSize = 30.sp) }
+    }
+}
+
+@Composable
+private fun FilaAnimal(a: Animal, alTocar: () -> Unit) {
+    Column(Modifier.clickable(onClick = alTocar)) {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(Modifier.size(56.dp).background(a.pastel(), RoundedCornerShape(12.dp)), Alignment.Center) {
+                Text(a.emoji(), fontSize = 32.sp)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(a.nombre, fontWeight = FontWeight.SemiBold)
+                Text("${a.especieTexto()} · ${a.edadTexto()}", fontSize = 14.sp, color = TextoSecundario)
+            }
+            Insignia(a.estadoVisible())
+        }
+        HorizontalDivider(color = Linea)
+    }
+}
+
+// Detalle de un animal para la fundación, con las solicitudes que ha recibido
+@Composable
+fun FundacionAnimalScreen(
+    animales: AnimalesViewModel,
+    solicitudes: SolicitudesViewModel,
+    id: Long,
+    volver: () -> Unit,
+    abrirSolicitud: (Long) -> Unit,
+) {
+    LaunchedEffect(id) {
+        animales.cargarDetalle(id)
+        solicitudes.cargarDelAnimal(id)
+    }
+    when (val d = animales.detalle) {
+        is Resultado.Ok -> {
+            val a = d.dato
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Portada(a, volver)
+                Surface(
+                    Modifier.fillMaxWidth().offset(y = (-24).dp),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    color = Fondo,
+                ) {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                            Text(a.nombre, style = MaterialTheme.typography.headlineMedium)
+                            Insignia(a.estadoVisible())
+                        }
+                        Text(a.datosTexto(), Modifier.padding(top = 4.dp), fontSize = 14.sp, color = TextoSecundario)
+
+                        Text("Solicitudes de este animal", Modifier.padding(top = 24.dp, bottom = 12.dp), style = MaterialTheme.typography.titleMedium)
+                        when (val s = solicitudes.delAnimal) {
+                            null -> CircularProgressIndicator()
+                            is Resultado.Error -> Text(s.mensaje, color = MaterialTheme.colorScheme.error)
+                            is Resultado.Ok ->
+                                if (s.dato.isEmpty()) {
+                                    Text("Aún no tiene solicitudes", color = TextoSecundario)
+                                } else {
+                                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        s.dato.forEach { sol ->
+                                            TarjetaSolicitud(sol, sol.usuarioNombre, fechaTexto(sol.fecha)) { abrirSolicitud(sol.id) }
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        else -> Column(Modifier.fillMaxSize()) {
+            BarraSuperior("Animal", volver)
+            if (d is Resultado.Error) ErrorConReintento(d.mensaje) { animales.cargarDetalle(id) } else Cargando()
         }
     }
 }

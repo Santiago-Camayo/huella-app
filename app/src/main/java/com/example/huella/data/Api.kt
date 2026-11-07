@@ -24,8 +24,9 @@ interface ApiService {
     @GET("animales/{id}") suspend fun animal(@Path("id") id: Long): Response<Animal>
 
     @POST("solicitudes") suspend fun crearSolicitud(@Body datos: SolicitudRequest): Response<Solicitud>
-    // orden = "antiguas" para la fundación; null deja las más recientes primero
-    @GET("solicitudes") suspend fun solicitudes(@Query("orden") orden: String?): Response<List<Solicitud>>
+    // orden = "antiguas" para la fundación; null deja las más recientes primero. animalId filtra por animal.
+    @GET("solicitudes")
+    suspend fun solicitudes(@Query("orden") orden: String?, @Query("animalId") animalId: Long?): Response<List<Solicitud>>
     @GET("solicitudes/{id}") suspend fun solicitud(@Path("id") id: Long): Response<Solicitud>
     @PATCH("solicitudes/{id}/estado")
     suspend fun cambiarEstado(@Path("id") id: Long, @Body datos: EstadoRequest): Response<Solicitud>

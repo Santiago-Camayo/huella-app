@@ -58,14 +58,7 @@ private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            Box(Modifier.fillMaxWidth().height(260.dp).background(a.pastel()), Alignment.Center) {
-                Text(a.emoji(), fontSize = 110.sp)
-                Box(
-                    Modifier.align(Alignment.TopStart).padding(14.dp).size(44.dp)
-                        .background(Color.White.copy(alpha = 0.84f), CircleShape).clickable(onClick = volver),
-                    Alignment.Center,
-                ) { Text("‹", fontSize = 34.sp) }
-            }
+            Portada(a, volver)
 
             // Panel que sube un poco sobre la imagen, como en el diseño
             Surface(
@@ -83,11 +76,7 @@ private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
                             Text(a.nombre, style = MaterialTheme.typography.headlineMedium)
                             Insignia(a.estado)
                         }
-                        Text(
-                            listOfNotNull(a.especieTexto(), a.raza, a.edadTexto(), a.sexo.replaceFirstChar { it.uppercase() })
-                                .joinToString(" · "),
-                            Modifier.padding(top = 4.dp), fontSize = 14.sp, color = TextoSecundario,
-                        )
+                        Text(a.datosTexto(), Modifier.padding(top = 4.dp), fontSize = 14.sp, color = TextoSecundario)
                         Text("${a.fundacionNombre} · ${a.fundacionCiudad}", fontSize = 14.sp, color = TextoSecundario)
 
                         Text("Sobre ${a.nombre}", Modifier.padding(top = 24.dp, bottom = 8.dp), style = MaterialTheme.typography.titleMedium)
@@ -111,6 +100,19 @@ private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
                 Boton(if (disponible) "Quiero adoptarlo" else "No recibe solicitudes", adoptar, habilitado = disponible)
             }
         }
+    }
+}
+
+// Imagen grande del animal (emoji sobre su color) con el botón de volver flotante
+@Composable
+fun Portada(a: Animal, volver: () -> Unit) {
+    Box(Modifier.fillMaxWidth().height(260.dp).background(a.pastel()), Alignment.Center) {
+        Text(a.emoji(), fontSize = 110.sp)
+        Box(
+            Modifier.align(Alignment.TopStart).padding(14.dp).size(44.dp)
+                .background(Color.White.copy(alpha = 0.84f), CircleShape).clickable(onClick = volver),
+            Alignment.Center,
+        ) { Text("‹", fontSize = 34.sp) }
     }
 }
 

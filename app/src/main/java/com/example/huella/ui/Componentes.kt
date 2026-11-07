@@ -198,7 +198,7 @@ fun Insignia(estado: String) {
         "apartado", "pendiente" -> ambar to "◔"
         "en_revision" -> ambar to "◉"
         "rechazada" -> (Color(0xFFFEE2E2) to Color(0xFF991B1B)) to "✕"
-        "cancelada" -> (Color(0xFFE2E8F0) to Color(0xFF475569)) to "—"
+        "cancelada", "retirado" -> (Color(0xFFE2E8F0) to Color(0xFF475569)) to "—"
         else -> azul to "♥" // adoptado, finalizada
     }
     val (fondo, letra) = colores

@@ -155,6 +155,13 @@ fun Animal.pastel(): Color = pastelDe(id)
 fun Animal.especieTexto(): String =
     if (especie == "otro") especieOtra ?: "Otro" else especie.replaceFirstChar { it.uppercase() }
 
+// "Perro · Labrador · 2 años · Macho"
+fun Animal.datosTexto(): String =
+    listOfNotNull(especieTexto(), raza, edadTexto(), sexo.replaceFirstChar { it.uppercase() }).joinToString(" · ")
+
+// Para la fundación un retirado se muestra como "retirado" aunque su estado sea otro
+fun Animal.estadoVisible(): String = if (activo) estado else "retirado"
+
 fun Animal.edadTexto(): String = when (edad) {
     0 -> "Menos de 1 año"
     1 -> "1 año"

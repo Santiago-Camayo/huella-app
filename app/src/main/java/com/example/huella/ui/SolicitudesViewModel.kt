@@ -31,8 +31,19 @@ class SolicitudesViewModel : ViewModel() {
     fun cargarLista(orden: String?, refrescar: Boolean = false) {
         viewModelScope.launch {
             if (refrescar) refrescando = true else lista = null
-            lista = llamar { Api.servicio.solicitudes(orden) }
+            lista = llamar { Api.servicio.solicitudes(orden, null) }
             refrescando = false
+        }
+    }
+
+    // Solicitudes de un solo animal (detalle del animal en el módulo de la fundación)
+    var delAnimal by mutableStateOf<Resultado<List<Solicitud>>?>(null)
+        private set
+
+    fun cargarDelAnimal(animalId: Long) {
+        viewModelScope.launch {
+            delAnimal = null
+            delAnimal = llamar { Api.servicio.solicitudes("antiguas", animalId) }
         }
     }
 
