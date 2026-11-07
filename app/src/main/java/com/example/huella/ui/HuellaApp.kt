@@ -12,6 +12,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -59,13 +65,20 @@ fun HuellaApp() {
         Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
             NavHost(nav, startDestination = "splash", modifier = Modifier.weight(1f)) {
                 composable("splash") {
-                    Splash()
+                    var intento by remember { mutableIntStateOf(0) }
+                    var sinRed by remember { mutableStateOf(false) }
+                    Splash(sinRed) { sinRed = false; intento++ }
                     // Se ve al menos 1,4 s mientras se revisa si hay una sesión guardada (HU-03)
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(intento) {
                         val inicio = SystemClock.elapsedRealtime()
-                        val haySesion = auth.restaurarSesion()
+                        val arranque = auth.restaurarSesion()
                         delay((1400 - (SystemClock.elapsedRealtime() - inicio)).coerceAtLeast(0))
-                        nav.navigate(if (haySesion) inicioDe(auth.usuario) else "login") { popUpTo("splash") { inclusive = true } }
+                        if (arranque == Arranque.SIN_RED) {
+                            sinRed = true
+                        } else {
+                            val destino = if (arranque == Arranque.CON_SESION) inicioDe(auth.usuario) else "login"
+                            nav.navigate(destino) { popUpTo("splash") { inclusive = true } }
+                        }
                     }
                 }
                 composable("login") {
@@ -144,10 +157,17 @@ fun HuellaApp() {
 }
 
 @Composable
-private fun Splash() {
-    Column(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterHorizontally) {
+private fun Splash(sinRed: Boolean, reintentar: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(24.dp), Arrangement.Center, Alignment.CenterHorizontally) {
         Text("🐾", fontSize = 72.sp)
         Text("Huella", Modifier.padding(top = 16.dp, bottom = 8.dp), fontSize = 32.sp, color = Primario, style = MaterialTheme.typography.headlineMedium)
         Text("Encuentra a tu compañero", fontSize = 14.sp, color = TextoSecundario)
+        if (sinRed) {
+            Text(
+                "No hay conexión con el servidor", Modifier.padding(top = 32.dp, bottom = 16.dp),
+                color = MaterialTheme.colorScheme.error, fontSize = 14.sp,
+            )
+            Boton("Reintentar", reintentar, Modifier.fillMaxWidth(0.6f))
+        }
     }
 }

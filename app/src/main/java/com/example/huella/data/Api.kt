@@ -55,10 +55,11 @@ object Api {
         .create(ApiService::class.java)
 }
 
-// Resultado simple para las pantallas: el dato, o el mensaje de error de la API
+// Resultado simple para las pantallas: el dato, o el mensaje de error de la API.
+// codigo es el código HTTP del error; null significa que no hubo conexión.
 sealed class Resultado<out T> {
     data class Ok<T>(val dato: T) : Resultado<T>()
-    data class Error(val mensaje: String) : Resultado<Nothing>()
+    data class Error(val mensaje: String, val codigo: Int? = null) : Resultado<Nothing>()
 }
 
 // Ejecuta una llamada y convierte los errores ({ "error": "mensaje" }) y la falta de internet en texto
@@ -68,7 +69,8 @@ suspend fun <T> llamar(peticion: suspend () -> Response<T>): Resultado<T> = try 
     if (r.isSuccessful && cuerpo != null) Resultado.Ok(cuerpo)
     else Resultado.Error(
         runCatching { JsonParser.parseString(r.errorBody()?.string()).asJsonObject["error"].asString }
-            .getOrDefault("Error del servidor (${r.code()})")
+            .getOrDefault("Error del servidor (${r.code()})"),
+        r.code(),
     )
 } catch (e: java.io.IOException) {
     Resultado.Error("No hay conexión con el servidor")

@@ -15,6 +15,9 @@ import com.example.huella.data.llamar
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
+// Cómo termina la revisión de la sesión al abrir la app
+enum class Arranque { CON_SESION, SIN_SESION, SIN_RED }
+
 // Estado de la sesión: HU-01 (registro), HU-02 (login), HU-03 (recordar sesión) y HU-04 (cerrar).
 class AuthViewModel : ViewModel() {
     var usuario by mutableStateOf<Usuario?>(null)
@@ -51,15 +54,22 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Al abrir la app: si hay token guardado, GET /usuarios/me dice si sigue siendo válido
-    suspend fun restaurarSesion(): Boolean {
-        if (Api.sesion.token != null) {
-            when (val r = llamar { Api.servicio.me() }) {
-                is Resultado.Ok -> usuario = r.dato
-                is Resultado.Error -> Api.sesion.cerrar()
+    // HU-03. Al abrir la app: si hay token guardado, GET /usuarios/me dice si sigue siendo válido.
+    // Sin red no se borra el token: la app muestra Reintentar.
+    suspend fun restaurarSesion(): Arranque {
+        if (Api.sesion.token == null) return Arranque.SIN_SESION
+        return when (val r = llamar { Api.servicio.me() }) {
+            is Resultado.Ok -> {
+                usuario = r.dato
+                Arranque.CON_SESION
+            }
+            is Resultado.Error -> {
+                if (r.codigo == null) return Arranque.SIN_RED
+                Api.sesion.cerrar()
+                if (r.codigo == 401) error = "Tu sesión expiró. Inicia sesión de nuevo."
+                Arranque.SIN_SESION
             }
         }
-        return usuario != null
     }
 
     fun cerrarSesion() {

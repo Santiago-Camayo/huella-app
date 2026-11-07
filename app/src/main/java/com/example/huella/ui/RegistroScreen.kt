@@ -26,6 +26,7 @@ fun RegistroScreen(auth: AuthViewModel, alRegistrar: () -> Unit, volver: () -> U
     var correo by rememberSaveable { mutableStateOf("") }
     var telefono by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var confirmacion by rememberSaveable { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize()) {
         BarraSuperior("Crear cuenta", volver)
@@ -35,6 +36,7 @@ fun RegistroScreen(auth: AuthViewModel, alRegistrar: () -> Unit, volver: () -> U
                 Campo("Correo", correo, { correo = it }, "correo@ejemplo.com", KeyboardType.Email)
                 Campo("Teléfono", telefono, { telefono = it }, "300 000 0000", KeyboardType.Phone)
                 Campo("Contraseña", password, { password = it }, "Mínimo 8 caracteres", KeyboardType.Password, esClave = true)
+                Campo("Confirmar contraseña", confirmacion, { confirmacion = it }, "Repite la contraseña", KeyboardType.Password, esClave = true)
             }
 
             auth.error?.let {
@@ -48,6 +50,7 @@ fun RegistroScreen(auth: AuthViewModel, alRegistrar: () -> Unit, volver: () -> U
                     when {
                         nombre.isBlank() || correo.isBlank() -> auth.error = "Escribe tu nombre y tu correo"
                         password.length < 8 -> auth.error = "La contraseña debe tener al menos 8 caracteres"
+                        password != confirmacion -> auth.error = "Las contraseñas no coinciden"
                         else -> auth.registrar(nombre, correo, telefono, password, alRegistrar)
                     }
                 },
