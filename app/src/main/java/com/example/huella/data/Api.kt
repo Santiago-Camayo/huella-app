@@ -8,6 +8,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -21,6 +22,13 @@ interface ApiService {
     @GET("usuarios/me") suspend fun me(): Response<Usuario>
     @GET("animales") suspend fun animales(@Query("estado") estado: String?): Response<List<Animal>>
     @GET("animales/{id}") suspend fun animal(@Path("id") id: Long): Response<Animal>
+
+    @POST("solicitudes") suspend fun crearSolicitud(@Body datos: SolicitudRequest): Response<Solicitud>
+    // orden = "antiguas" para la fundación; null deja las más recientes primero
+    @GET("solicitudes") suspend fun solicitudes(@Query("orden") orden: String?): Response<List<Solicitud>>
+    @GET("solicitudes/{id}") suspend fun solicitud(@Path("id") id: Long): Response<Solicitud>
+    @PATCH("solicitudes/{id}/estado")
+    suspend fun cambiarEstado(@Path("id") id: Long, @Body datos: EstadoRequest): Response<Solicitud>
 }
 
 object Api {

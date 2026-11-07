@@ -11,6 +11,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -21,6 +25,14 @@ import com.example.huella.ui.theme.TextoSecundario
 @Composable
 fun PerfilScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
     val u = auth.usuario
+    var confirmar by remember { mutableStateOf(false) }
+    if (confirmar) {
+        DialogoConfirmacion(
+            "¿Cerrar sesión?", "Tendrás que volver a iniciar sesión para entrar.", "Cerrar sesión",
+            alConfirmar = { confirmar = false; alCerrarSesion() },
+            alCerrar = { confirmar = false },
+        )
+    }
     Column(Modifier.fillMaxSize()) {
         BarraSuperior("Perfil")
         Column(Modifier.padding(16.dp), Arrangement.spacedBy(12.dp)) {
@@ -38,7 +50,7 @@ fun PerfilScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
                     )
                 }
             }
-            Boton("Cerrar sesión", alCerrarSesion, estilo = EstiloBoton.Neutro)
+            Boton("Cerrar sesión", { confirmar = true }, estilo = EstiloBoton.Neutro)
         }
     }
 }

@@ -143,10 +143,14 @@ fun ErrorConReintento(mensaje: String, reintentar: () -> Unit) {
     }
 }
 
-// El diseño muestra cada animal con un emoji sobre un fondo pastel
-fun Animal.emoji(): String = when (especie) { "perro" -> "🐶"; "gato" -> "🐱"; else -> "🐾" }
+// El diseño muestra cada animal con un emoji sobre un fondo pastel (el mismo en todas las pantallas)
+fun emojiDe(especie: String): String = when (especie) { "perro" -> "🐶"; "gato" -> "🐱"; else -> "🐾" }
 
-fun Animal.pastel(): Color = Pasteles[(id % Pasteles.size).toInt()]
+fun pastelDe(animalId: Long): Color = Pasteles[(animalId % Pasteles.size).toInt()]
+
+fun Animal.emoji(): String = emojiDe(especie)
+
+fun Animal.pastel(): Color = pastelDe(id)
 
 fun Animal.especieTexto(): String =
     if (especie == "otro") especieOtra ?: "Otro" else especie.replaceFirstChar { it.uppercase() }

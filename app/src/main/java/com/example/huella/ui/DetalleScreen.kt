@@ -1,6 +1,5 @@
 package com.example.huella.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,11 +39,11 @@ import com.example.huella.ui.theme.Verde
 
 // HU-08: detalle de un animal.
 @Composable
-fun DetalleScreen(vm: AnimalesViewModel, id: Long, volver: () -> Unit) {
+fun DetalleScreen(vm: AnimalesViewModel, id: Long, volver: () -> Unit, adoptar: () -> Unit) {
     LaunchedEffect(id) { vm.cargarDetalle(id) }
 
     when (val d = vm.detalle) {
-        is Resultado.Ok -> Contenido(d.dato, volver)
+        is Resultado.Ok -> Contenido(d.dato, volver, adoptar)
         else -> Column(Modifier.fillMaxSize()) {
             BarraSuperior("Detalle", volver)
             if (d is Resultado.Error) ErrorConReintento(d.mensaje) { vm.cargarDetalle(id) } else Cargando()
@@ -54,8 +52,7 @@ fun DetalleScreen(vm: AnimalesViewModel, id: Long, volver: () -> Unit) {
 }
 
 @Composable
-private fun Contenido(a: Animal, volver: () -> Unit) {
-    val contexto = LocalContext.current
+private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
     val retirado = !a.activo // la fundación retiró la publicación
     val disponible = a.estado == "disponible"
 
@@ -108,18 +105,10 @@ private fun Contenido(a: Animal, volver: () -> Unit) {
             }
         }
 
-        // Botón fijo abajo. Enviar la solicitud es HU-09 (Sprint 2).
+        // Botón fijo abajo: solo se puede solicitar si el animal está disponible (HU-09)
         if (!retirado) {
-            Surface(color = Color.White) {
-                Column {
-                    HorizontalDivider(color = Linea)
-                    Boton(
-                        if (disponible) "Quiero adoptarlo" else "No recibe solicitudes",
-                        { Toast.makeText(contexto, "Disponible en el Sprint 2", Toast.LENGTH_SHORT).show() },
-                        Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        habilitado = disponible,
-                    )
-                }
+            BarraFija {
+                Boton(if (disponible) "Quiero adoptarlo" else "No recibe solicitudes", adoptar, habilitado = disponible)
             }
         }
     }

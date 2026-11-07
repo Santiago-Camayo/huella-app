@@ -41,3 +41,22 @@ data class Animal(
     @SerializedName("fundacion_nombre") val fundacionNombre: String,
     @SerializedName("fundacion_ciudad") val fundacionCiudad: String,
 )
+
+data class SolicitudRequest(@SerializedName("animal_id") val animalId: Long, val comentario: String)
+
+data class EstadoRequest(val estado: String)
+
+// Estados: pendiente, en_revision, aprobada, rechazada, cancelada, finalizada
+data class Solicitud(
+    val id: Long,
+    @SerializedName("animal_id") val animalId: Long,
+    val estado: String,
+    val comentario: String,
+    val fecha: String,
+    @SerializedName("animal_nombre") val animalNombre: String,
+    @SerializedName("animal_especie") val animalEspecie: String,
+    @SerializedName("animal_estado") val animalEstado: String,
+    @SerializedName("usuario_nombre") val usuarioNombre: String,
+    @SerializedName("usuario_correo") val usuarioCorreo: String,
+    @SerializedName("usuario_telefono") val usuarioTelefono: String?,
+)
