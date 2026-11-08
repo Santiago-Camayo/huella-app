@@ -106,8 +106,8 @@ private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
 // Imagen grande del animal (emoji sobre su color) con el botón de volver flotante
 @Composable
 fun Portada(a: Animal, volver: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(260.dp).background(a.pastel()), Alignment.Center) {
-        Text(a.emoji(), fontSize = 110.sp)
+    Box(Modifier.fillMaxWidth().height(260.dp)) {
+        ImagenAnimal(a, 110, Modifier.fillMaxSize())
         Box(
             Modifier.align(Alignment.TopStart).padding(14.dp).size(44.dp)
                 .background(Color.White.copy(alpha = 0.84f), CircleShape).clickable(onClick = volver),

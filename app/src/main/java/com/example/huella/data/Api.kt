@@ -2,7 +2,12 @@ package com.example.huella.data
 
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
+import retrofit2.http.Multipart
+import retrofit2.http.Part
+import retrofit2.http.PartMap
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,6 +27,14 @@ interface ApiService {
     @GET("usuarios/me") suspend fun me(): Response<Usuario>
     @GET("animales") suspend fun animales(@Query("estado") estado: String?): Response<List<Animal>>
     @GET("animales/{id}") suspend fun animal(@Path("id") id: Long): Response<Animal>
+
+    // HU-17: formulario multipart con los datos del animal y la foto
+    @Multipart
+    @POST("animales")
+    suspend fun crearAnimal(
+        @PartMap campos: Map<String, @JvmSuppressWildcards RequestBody>,
+        @Part foto: MultipartBody.Part,
+    ): Response<Animal>
 
     @POST("solicitudes") suspend fun crearSolicitud(@Body datos: SolicitudRequest): Response<Solicitud>
     // orden = "antiguas" para la fundación; null deja las más recientes primero. animalId filtra por animal.

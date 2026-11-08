@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.example.huella.data.Animal
 import com.example.huella.data.Resultado
 import com.example.huella.ui.theme.Pasteles
@@ -95,9 +97,7 @@ private fun TarjetaAnimal(animal: Animal, alTocar: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(110.dp).background(animal.pastel()), Alignment.Center) {
-            Text(animal.emoji(), fontSize = 56.sp)
-        }
+        ImagenAnimal(animal, 56, Modifier.fillMaxWidth().height(110.dp))
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp), Arrangement.spacedBy(4.dp)) {
             Text(animal.nombre, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Text("${animal.especieTexto()} · ${animal.edadTexto()}", fontSize = 14.sp, color = TextoSecundario)
@@ -149,6 +149,21 @@ fun emojiDe(especie: String): String = when (especie) { "perro" -> "🐶"; "gato
 fun pastelDe(animalId: Long): Color = Pasteles[(animalId % Pasteles.size).toInt()]
 
 fun Animal.emoji(): String = emojiDe(especie)
+
+// Foto subida desde la app a Supabase Storage. Las fotos de ejemplo del seed no se muestran:
+// esos animales se ven con su emoji, como en el diseño de Figma.
+fun Animal.fotoSubida(): String? = foto.takeIf { "/storage/v1/object/public/" in it }
+
+// Cuadro del animal: su emoji sobre el color pastel y, encima, la foto si fue subida
+@Composable
+fun ImagenAnimal(a: Animal, tamanoEmoji: Int, modifier: Modifier = Modifier) {
+    Box(modifier.background(a.pastel()), Alignment.Center) {
+        Text(a.emoji(), fontSize = tamanoEmoji.sp)
+        a.fotoSubida()?.let {
+            AsyncImage(it, a.nombre, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        }
+    }
+}
 
 fun Animal.pastel(): Color = pastelDe(id)
 

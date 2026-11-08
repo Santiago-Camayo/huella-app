@@ -133,7 +133,14 @@ fun HuellaApp() {
                     FundacionSolicitudScreen(solicitudes, idDe(it), volver = { nav.popBackStack() })
                 }
                 composable("f/animales") {
-                    FundacionAnimalesScreen(animales, abrir = { id -> nav.navigate("f/animal/$id") })
+                    FundacionAnimalesScreen(
+                        animales,
+                        abrir = { id -> nav.navigate("f/animal/$id") },
+                        registrar = { nav.navigate("f/registrar") },
+                    )
+                }
+                composable("f/registrar") {
+                    RegistrarAnimalScreen(animales, volver = { nav.popBackStack() }, alRegistrar = { nav.popBackStack() })
                 }
                 composable("f/animal/{id}", arguments = argumentoId) {
                     FundacionAnimalScreen(

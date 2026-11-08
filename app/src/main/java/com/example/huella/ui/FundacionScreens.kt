@@ -1,7 +1,7 @@
 package com.example.huella.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
@@ -142,11 +142,10 @@ fun FundacionSolicitudScreen(vm: SolicitudesViewModel, id: Long, volver: () -> U
 
 // HU-16: animales de mi fundación en todos los estados, con búsqueda y filtro.
 @Composable
-fun FundacionAnimalesScreen(vm: AnimalesViewModel, abrir: (Long) -> Unit) {
+fun FundacionAnimalesScreen(vm: AnimalesViewModel, abrir: (Long) -> Unit, registrar: () -> Unit) {
     LaunchedEffect(Unit) { vm.cargarDeMiFundacion() }
     var busqueda by rememberSaveable { mutableStateOf("") }
     var filtro by rememberSaveable { mutableStateOf("todos") }
-    val contexto = LocalContext.current
     val filtros = listOf("todos", "disponible", "apartado", "adoptado", "retirado")
 
     Box(Modifier.fillMaxSize()) {
@@ -190,9 +189,9 @@ fun FundacionAnimalesScreen(vm: AnimalesViewModel, abrir: (Long) -> Unit) {
                 }
             }
         }
-        // Registrar un animal con foto es HU-17 (siguiente paso del Sprint 2)
+        // Botón para registrar un animal nuevo (HU-17)
         FloatingActionButton(
-            { Toast.makeText(contexto, "Registrar animal: llega con la subida de fotos", Toast.LENGTH_SHORT).show() },
+            registrar,
             Modifier.align(Alignment.BottomEnd).padding(16.dp),
             shape = CircleShape, containerColor = Primario, contentColor = Color.White,
         ) { Text("+", fontSize = 30.sp) }
@@ -207,9 +206,7 @@ private fun FilaAnimal(a: Animal, alTocar: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.size(56.dp).background(a.pastel(), RoundedCornerShape(12.dp)), Alignment.Center) {
-                Text(a.emoji(), fontSize = 32.sp)
-            }
+            ImagenAnimal(a, 32, Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)))
             Column(Modifier.weight(1f)) {
                 Text(a.nombre, fontWeight = FontWeight.SemiBold)
                 Text("${a.especieTexto()} · ${a.edadTexto()}", fontSize = 14.sp, color = TextoSecundario)
