@@ -24,6 +24,7 @@ const val URL_API = "https://huella-api-u3fo.onrender.com/"
 interface ApiService {
     @POST("auth/register") suspend fun registrar(@Body datos: RegistroRequest): Response<AuthResponse>
     @POST("auth/login") suspend fun login(@Body datos: LoginRequest): Response<AuthResponse>
+    @POST("auth/registro-fundacion") suspend fun registrarFundacion(@Body datos: RegistroFundacionRequest): Response<AuthResponse>
     @GET("usuarios/me") suspend fun me(): Response<Usuario>
     @GET("animales") suspend fun animales(@Query("estado") estado: String?): Response<List<Animal>>
     @GET("animales/{id}") suspend fun animal(@Path("id") id: Long): Response<Animal>

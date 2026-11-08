@@ -35,6 +35,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import coil.compose.AsyncImage
 import com.example.huella.data.Animal
 import com.example.huella.data.Resultado
@@ -42,17 +46,58 @@ import com.example.huella.ui.theme.Pasteles
 import com.example.huella.ui.theme.TextoSecundario
 
 // Inicio (HU-06): animales disponibles, con estados de carga, vacío y error.
+// HU-07: búsqueda por nombre y filtros combinables por especie, sexo, raza y fundación.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnimalesScreen(vm: AnimalesViewModel, nombre: String, abrir: (Long) -> Unit) {
     // Al volver desde el detalle no se vuelve a pedir la lista
     LaunchedEffect(Unit) { if (vm.lista !is Resultado.Ok) vm.cargarLista() }
+    var busqueda by rememberSaveable { mutableStateOf("") }
     var filtro by rememberSaveable { mutableStateOf<String?>(null) } // "perro", "gato" o nada
+    var sexo by rememberSaveable { mutableStateOf<String?>(null) }
+    var raza by rememberSaveable { mutableStateOf("") }
+    var fundacion by rememberSaveable { mutableStateOf<String?>(null) }
+    var verFiltros by rememberSaveable { mutableStateOf(false) }
+    val filtrosExtra = listOf(sexo != null, raza.isNotBlank(), fundacion != null).count { it }
+    val limpiar = { busqueda = ""; filtro = null; sexo = null; raza = ""; fundacion = null }
 
     when (val lista = vm.lista) {
         null -> Cargando()
         is Resultado.Error -> ErrorConReintento(lista.mensaje, vm::cargarLista)
         is Resultado.Ok -> {
-            val visibles = lista.dato.filter { filtro == null || it.especie == filtro }
+            // Se filtra la lista ya cargada: los filtros responden al instante sin pedir de nuevo a la API
+            val visibles = lista.dato.filter {
+                (filtro == null || it.especie == filtro) &&
+                    (sexo == null || it.sexo == sexo) &&
+                    (fundacion == null || it.fundacionNombre == fundacion) &&
+                    it.nombre.contains(busqueda.trim(), ignoreCase = true) &&
+                    (raza.isBlank() || (it.raza ?: "").contains(raza.trim(), ignoreCase = true))
+            }
+            if (verFiltros) {
+                ModalBottomSheet(onDismissRequest = { verFiltros = false }, containerColor = Color.White) {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), Arrangement.spacedBy(16.dp)) {
+                        Text("Filtros", style = MaterialTheme.typography.titleMedium)
+                        Text("Sexo", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Chip("Todos", sexo == null) { sexo = null }
+                            Chip("Macho", sexo == "macho") { sexo = "macho" }
+                            Chip("Hembra", sexo == "hembra") { sexo = "hembra" }
+                        }
+                        Campo("Raza", raza, { raza = it }, "Ej. Labrador")
+                        Text("Fundación", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                        Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(8.dp)) {
+                            Chip("Todas", fundacion == null) { fundacion = null }
+                            lista.dato.map { it.fundacionNombre }.distinct().forEach { f ->
+                                Chip(f, fundacion == f) { fundacion = f }
+                            }
+                        }
+                        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
+                            Boton("Limpiar", limpiar, Modifier.weight(1f), EstiloBoton.Neutro)
+                            Boton("Aplicar", { verFiltros = false }, Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
             LazyVerticalGrid(
                 GridCells.Fixed(2),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -66,21 +111,31 @@ fun AnimalesScreen(vm: AnimalesViewModel, nombre: String, abrir: (Long) -> Unit)
                             "Encuentra a tu nuevo compañero.",
                             Modifier.padding(top = 4.dp), color = TextoSecundario, fontSize = 14.sp,
                         )
-                        Row(Modifier.padding(top = 16.dp, bottom = 20.dp), Arrangement.spacedBy(8.dp)) {
+                        CampoBusqueda(busqueda, { busqueda = it }, "Buscar una mascota", Modifier.padding(top = 16.dp))
+                        Row(
+                            Modifier.horizontalScroll(rememberScrollState()).padding(top = 16.dp, bottom = 20.dp),
+                            Arrangement.spacedBy(8.dp),
+                        ) {
                             Chip("Perros", filtro == "perro") { filtro = if (filtro == "perro") null else "perro" }
                             Chip("Gatos", filtro == "gato") { filtro = if (filtro == "gato") null else "gato" }
+                            Chip(if (filtrosExtra > 0) "⚙ Filtros · $filtrosExtra" else "⚙ Filtros", filtrosExtra > 0) { verFiltros = true }
                         }
                         Text("Disponibles", style = MaterialTheme.typography.titleMedium)
                     }
                 }
                 if (visibles.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            if (lista.dato.isEmpty()) "No hay animales disponibles por ahora"
-                            else "Sin resultados. Prueba con otros filtros.",
-                            Modifier.fillMaxWidth().padding(vertical = 48.dp),
-                            textAlign = TextAlign.Center, color = TextoSecundario,
-                        )
+                        Column(Modifier.fillMaxWidth().padding(vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                if (lista.dato.isEmpty()) "No hay animales disponibles por ahora"
+                                else "🔎 Sin resultados. Prueba con otros filtros.",
+                                textAlign = TextAlign.Center, color = TextoSecundario,
+                            )
+                            if (lista.dato.isNotEmpty()) {
+                                Spacer(Modifier.height(16.dp))
+                                Boton("Limpiar filtros", limpiar, Modifier.fillMaxWidth(0.6f), EstiloBoton.Neutro)
+                            }
+                        }
                     }
                 }
                 items(visibles, key = { it.id }) { TarjetaAnimal(it) { abrir(it.id) } }

@@ -7,7 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.huella.data.Api
 import com.example.huella.data.AuthResponse
+import com.example.huella.data.DatosAdmin
+import com.example.huella.data.DatosFundacion
 import com.example.huella.data.LoginRequest
+import com.example.huella.data.RegistroFundacionRequest
 import com.example.huella.data.RegistroRequest
 import com.example.huella.data.Resultado
 import com.example.huella.data.Usuario
@@ -36,6 +39,19 @@ class AuthViewModel : ViewModel() {
                 RegistroRequest(nombre.trim(), correo.trim(), telefono.trim().ifBlank { null }, password)
             )
         }
+
+    // HU-05: crea la fundación y su administrador; entra directo con la cuenta nueva
+    fun registrarFundacion(
+        fundacion: String, ciudad: String, telefono: String,
+        nombre: String, correo: String, password: String, alExito: () -> Unit,
+    ) = enviar(alExito) {
+        Api.servicio.registrarFundacion(
+            RegistroFundacionRequest(
+                DatosFundacion(fundacion.trim(), ciudad.trim(), telefono.trim().ifBlank { null }),
+                DatosAdmin(nombre.trim(), correo.trim(), password),
+            )
+        )
+    }
 
     // Guarda el token y el usuario si la API acepta; si no, deja el mensaje de error para la pantalla
     private fun enviar(alExito: () -> Unit, peticion: suspend () -> Response<AuthResponse>) {

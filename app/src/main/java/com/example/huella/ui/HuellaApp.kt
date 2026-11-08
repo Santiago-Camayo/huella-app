@@ -86,6 +86,14 @@ fun HuellaApp() {
                         auth,
                         alEntrar = { nav.navigate(inicioDe(auth.usuario)) { popUpTo("login") { inclusive = true } } },
                         irARegistro = { auth.error = null; nav.navigate("registro") },
+                        irARegistroFundacion = { auth.error = null; nav.navigate("registro-fundacion") },
+                    )
+                }
+                composable("registro-fundacion") {
+                    RegistroFundacionScreen(
+                        auth,
+                        alRegistrar = { nav.navigate("f/solicitudes") { popUpTo("login") { inclusive = true } } },
+                        volver = { auth.error = null; nav.popBackStack() },
                     )
                 }
                 composable("registro") {

@@ -28,7 +28,7 @@ import com.example.huella.ui.theme.Primario
 import com.example.huella.ui.theme.TextoSecundario
 
 @Composable
-fun LoginScreen(auth: AuthViewModel, alEntrar: () -> Unit, irARegistro: () -> Unit) {
+fun LoginScreen(auth: AuthViewModel, alEntrar: () -> Unit, irARegistro: () -> Unit, irARegistroFundacion: () -> Unit) {
     var correo by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
@@ -65,5 +65,11 @@ fun LoginScreen(auth: AuthViewModel, alEntrar: () -> Unit, irARegistro: () -> Un
                 fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Primario,
             )
         }
+        Text(
+            "Registrar fundación",
+            Modifier.fillMaxWidth().clickable(onClick = irARegistroFundacion).padding(vertical = 12.dp),
+            fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Primario,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }

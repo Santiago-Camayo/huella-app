@@ -151,18 +151,7 @@ fun FundacionAnimalesScreen(vm: AnimalesViewModel, abrir: (Long) -> Unit, regist
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             BarraSuperior("Animales")
-            OutlinedTextField(
-                busqueda, { busqueda = it },
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
-                placeholder = { Text("Buscar por nombre", color = TextoSecundario) },
-                leadingIcon = { Text("⌕", fontSize = 20.sp, color = TextoSecundario) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Foco, unfocusedBorderColor = Borde,
-                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
-                ),
-            )
+            CampoBusqueda(busqueda, { busqueda = it }, "Buscar por nombre", Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp))
             Row(
                 Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                 Arrangement.spacedBy(8.dp),

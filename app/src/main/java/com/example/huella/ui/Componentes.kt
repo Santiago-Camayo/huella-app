@@ -251,3 +251,19 @@ fun BarraInferior(pestanas: List<Pestana>, actual: String?, ir: (String) -> Unit
         }
     }
 }
+
+// Barra de búsqueda con la lupa a la izquierda
+@Composable
+fun CampoBusqueda(valor: String, alCambiar: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier) {
+    OutlinedTextField(
+        valor, alCambiar, modifier.fillMaxWidth(),
+        placeholder = { Text(placeholder, color = TextoSecundario) },
+        leadingIcon = { Text("⌕", fontSize = 20.sp, color = TextoSecundario) },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Foco, unfocusedBorderColor = Borde,
+            focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+        ),
+    )
+}

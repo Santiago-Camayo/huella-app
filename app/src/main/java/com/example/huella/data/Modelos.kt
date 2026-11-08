@@ -8,6 +8,11 @@ data class RegistroRequest(val nombre: String, val correo: String, val telefono:
 
 data class LoginRequest(val correo: String, val password: String)
 
+// HU-05: una sola petición con la fundación y su administrador
+data class DatosFundacion(val nombre: String, val ciudad: String, val telefono: String?)
+data class DatosAdmin(val nombre: String, val correo: String, val password: String)
+data class RegistroFundacionRequest(val fundacion: DatosFundacion, val admin: DatosAdmin)
+
 data class Usuario(
     val id: Long,
     val nombre: String,
@@ -38,6 +43,7 @@ data class Animal(
     val foto: String,
     val estado: String,
     val activo: Boolean, // false = la fundación retiró la publicación
+    @SerializedName("fundacion_id") val fundacionId: Long,
     @SerializedName("fundacion_nombre") val fundacionNombre: String,
     @SerializedName("fundacion_ciudad") val fundacionCiudad: String,
 )
