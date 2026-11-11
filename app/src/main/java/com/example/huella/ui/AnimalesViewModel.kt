@@ -31,32 +31,57 @@ class AnimalesViewModel : ViewModel() {
         private set
     var error by mutableStateOf<String?>(null)
 
-    // HU-17: lee la foto elegida, revisa tipo y tamaño, y envía el formulario multipart
-    fun crear(campos: Map<String, String>, foto: Uri, resolver: ContentResolver, alExito: () -> Unit) {
+    // HU-17 y HU-18: envía el formulario multipart. Con id == null crea (la foto es obligatoria);
+    // con un id edita ese animal (la foto es opcional: sin foto se conserva la actual).
+    fun guardar(id: Long?, campos: Map<String, String>, foto: Uri?, resolver: ContentResolver, alExito: () -> Unit) {
         if (enviando) return
         viewModelScope.launch {
             enviando = true
             error = null
-            val tipo = resolver.getType(foto)
-            val bytes = withContext(Dispatchers.IO) { resolver.openInputStream(foto)?.use { it.readBytes() } }
-            error = when {
-                tipo !in listOf("image/jpeg", "image/png", "image/webp") -> "La foto debe ser JPG, PNG o WEBP"
-                bytes == null -> "No se pudo leer la foto"
-                bytes.size > 5 * 1024 * 1024 -> "La foto no puede pesar más de 5 MB"
-                else -> null
+            val parte = foto?.let { leerFoto(it, resolver) ?: run { enviando = false; return@launch } }
+            val texto = "text/plain".toMediaType()
+            val cuerpo = campos.mapValues { it.value.toRequestBody(texto) }
+            val r = llamar {
+                if (id == null) Api.servicio.crearAnimal(cuerpo, parte!!) else Api.servicio.editarAnimal(id, cuerpo, parte)
             }
-            if (error == null && tipo != null && bytes != null) {
-                val texto = "text/plain".toMediaType()
-                val parte = MultipartBody.Part.createFormData(
-                    "foto", "foto.${tipo.substringAfter('/')}", bytes.toRequestBody(tipo.toMediaType()),
-                )
-                when (val r = llamar { Api.servicio.crearAnimal(campos.mapValues { it.value.toRequestBody(texto) }, parte) }) {
-                    is Resultado.Ok -> {
-                        lista = null // la lista del adoptante se vuelve a pedir
-                        alExito()
-                    }
-                    is Resultado.Error -> error = r.mensaje
+            when (r) {
+                is Resultado.Ok -> {
+                    lista = null // la lista del adoptante se vuelve a pedir
+                    alExito()
                 }
+                is Resultado.Error -> error = r.mensaje
+            }
+            enviando = false
+        }
+    }
+
+    // Lee la foto elegida y revisa tipo y tamaño. Si algo falla, deja el mensaje en error y devuelve null.
+    private suspend fun leerFoto(foto: Uri, resolver: ContentResolver): MultipartBody.Part? {
+        val tipo = resolver.getType(foto)
+        val bytes = withContext(Dispatchers.IO) { resolver.openInputStream(foto)?.use { it.readBytes() } }
+        error = when {
+            tipo == null || tipo !in listOf("image/jpeg", "image/png", "image/webp") -> "La foto debe ser JPG, PNG o WEBP"
+            bytes == null -> "No se pudo leer la foto"
+            bytes.size > 5 * 1024 * 1024 -> "La foto no puede pesar más de 5 MB"
+            else -> null
+        }
+        if (error != null || tipo == null || bytes == null) return null
+        return MultipartBody.Part.createFormData("foto", "foto.${tipo.substringAfter('/')}", bytes.toRequestBody(tipo.toMediaType()))
+    }
+
+    // HU-19: retira la publicación; el animal y sus solicitudes se conservan
+    fun retirar(id: Long, alExito: () -> Unit) {
+        if (enviando) return
+        viewModelScope.launch {
+            enviando = true
+            error = null
+            when (val r = llamar { Api.servicio.retirarAnimal(id) }) {
+                is Resultado.Ok -> {
+                    lista = null
+                    cargarDetalle(id)
+                    alExito()
+                }
+                is Resultado.Error -> error = r.mensaje
             }
             enviando = false
         }

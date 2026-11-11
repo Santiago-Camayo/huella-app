@@ -1,5 +1,6 @@
 package com.example.huella.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
@@ -54,6 +55,49 @@ import com.example.huella.ui.theme.Primario
 import com.example.huella.ui.theme.TextoSecundario
 
 // Módulo de la fundación.
+
+// HU-15: panel con las cifras de la fundación y sus últimas 5 solicitudes
+@Composable
+fun FundacionPanelScreen(vm: SolicitudesViewModel, nombre: String, abrir: (Long) -> Unit) {
+    LaunchedEffect(Unit) { vm.cargarResumen() }
+    when (val r = vm.resumen) {
+        null -> Cargando()
+        is Resultado.Error -> ErrorConReintento(r.mensaje, vm::cargarResumen)
+        is Resultado.Ok -> {
+            val c = r.dato
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+                Text("Panel de la fundación", style = MaterialTheme.typography.headlineSmall)
+                Text("Hola, $nombre", Modifier.padding(top = 4.dp), fontSize = 14.sp, color = TextoSecundario)
+                Row(Modifier.padding(top = 20.dp), Arrangement.spacedBy(12.dp)) {
+                    Cifra(c.disponibles, "Disponibles", Modifier.weight(1f))
+                    Cifra(c.pendientes, "Pendientes", Modifier.weight(1f))
+                }
+                Row(Modifier.padding(top = 12.dp), Arrangement.spacedBy(12.dp)) {
+                    Cifra(c.enRevision, "En revisión", Modifier.weight(1f))
+                    Cifra(c.adopcionesCompletadas, "Adopciones completadas", Modifier.weight(1f))
+                }
+                Text("Últimas solicitudes", Modifier.padding(top = 28.dp, bottom = 12.dp), style = MaterialTheme.typography.titleMedium)
+                if (c.ultimas.isEmpty()) {
+                    Text("Aún no hay solicitudes", color = TextoSecundario)
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        c.ultimas.forEach { s ->
+                            TarjetaSolicitud(s, s.usuarioNombre, "${s.animalNombre} · ${s.animalEspecie.replaceFirstChar { it.uppercase() }}") { abrir(s.id) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Cifra(numero: Int, etiqueta: String, modifier: Modifier) {
+    Caja(modifier) {
+        Text("$numero", fontSize = 28.sp, color = Primario, fontWeight = FontWeight.SemiBold)
+        Text(etiqueta, fontSize = 14.sp, color = TextoSecundario)
+    }
+}
 
 // HU-21: solicitudes de los animales de mi fundación, pendientes más antiguas primero.
 @Composable
@@ -112,12 +156,15 @@ fun FundacionSolicitudScreen(vm: SolicitudesViewModel, id: Long, volver: () -> U
                     vm.error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 14.sp) }
                 }
 
-                // pendiente -> en revisión -> aprobada. Finalizar la adopción es del Sprint 3.
-                val siguiente = when (s.estado) { "pendiente" -> "en_revision"; "en_revision" -> "aprobada"; else -> null }
+                // pendiente -> en revisión -> aprobada -> finalizada (HU-22 y HU-23)
+                val siguiente = when (s.estado) {
+                    "pendiente" -> "en_revision"; "en_revision" -> "aprobada"; "aprobada" -> "finalizada"; else -> null
+                }
                 if (s.estado in ESTADOS_ACTIVOS) {
                     BarraFija {
                         siguiente?.let {
-                            Boton(if (it == "en_revision") "Pasar a revisión" else "Aprobar", { nuevoEstado = it }, habilitado = !vm.enviando)
+                            val texto = when (it) { "en_revision" -> "Pasar a revisión"; "aprobada" -> "Aprobar"; else -> "Finalizar adopción" }
+                            Boton(texto, { nuevoEstado = it }, habilitado = !vm.enviando)
                         }
                         Boton("Rechazar", { nuevoEstado = "rechazada" }, estilo = EstiloBoton.Secundario, habilitado = !vm.enviando)
                     }
@@ -127,6 +174,11 @@ fun FundacionSolicitudScreen(vm: SolicitudesViewModel, id: Long, volver: () -> U
                     val (titulo, texto, boton) = when (estado) {
                         "en_revision" -> Triple("¿Pasar a revisión?", "La solicitud cambiará a En revisión.", "Continuar")
                         "aprobada" -> Triple("¿Aprobar solicitud?", "El animal quedará apartado para ${s.usuarioNombre}.", "Sí, aprobar")
+                        "finalizada" -> Triple(
+                            "¿Finalizar adopción?",
+                            "${s.animalNombre} pasará a Adoptado y las demás solicitudes activas de este animal se rechazarán.",
+                            "Sí, finalizar",
+                        )
                         else -> Triple("¿Rechazar solicitud?", "El adoptante verá su solicitud como rechazada.", "Sí, rechazar")
                     }
                     DialogoConfirmacion(
@@ -214,11 +266,16 @@ fun FundacionAnimalScreen(
     id: Long,
     volver: () -> Unit,
     abrirSolicitud: (Long) -> Unit,
+    editar: () -> Unit,
 ) {
     LaunchedEffect(id) {
+        animales.error = null
         animales.cargarDetalle(id)
         solicitudes.cargarDelAnimal(id)
     }
+    var confirmarRetiro by remember { mutableStateOf(false) }
+    val contexto = LocalContext.current
+
     when (val d = animales.detalle) {
         is Resultado.Ok -> {
             val a = d.dato
@@ -235,6 +292,18 @@ fun FundacionAnimalScreen(
                             Insignia(a.estadoVisible())
                         }
                         Text(a.datosTexto(), Modifier.padding(top = 4.dp), fontSize = 14.sp, color = TextoSecundario)
+
+                        // HU-18: un adoptado no se edita (RN-14). HU-19: retirar siempre se permite si está publicado.
+                        if (a.estado != "adoptado") {
+                            Boton("Editar", editar, Modifier.padding(top = 20.dp), EstiloBoton.Secundario)
+                        }
+                        if (a.activo) {
+                            Boton(
+                                "Retirar publicación", { confirmarRetiro = true }, Modifier.padding(top = 8.dp),
+                                EstiloBoton.Neutro, habilitado = !animales.enviando,
+                            )
+                        }
+                        animales.error?.let { Text(it, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.error, fontSize = 14.sp) }
 
                         Text("Solicitudes de este animal", Modifier.padding(top = 24.dp, bottom = 12.dp), style = MaterialTheme.typography.titleMedium)
                         when (val s = solicitudes.delAnimal) {
@@ -253,6 +322,18 @@ fun FundacionAnimalScreen(
                         }
                     }
                 }
+            }
+            if (confirmarRetiro) {
+                DialogoConfirmacion(
+                    "¿Retirar publicación?",
+                    "${a.nombre} dejará de aparecer en la búsqueda. Sus solicitudes se conservan.",
+                    "Sí, retirar",
+                    alConfirmar = {
+                        confirmarRetiro = false
+                        animales.retirar(a.id) { Toast.makeText(contexto, "Publicación retirada", Toast.LENGTH_SHORT).show() }
+                    },
+                    alCerrar = { confirmarRetiro = false },
+                )
             }
         }
         else -> Column(Modifier.fillMaxSize()) {

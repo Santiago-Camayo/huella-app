@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.huella.data.Api
 import com.example.huella.data.EstadoRequest
 import com.example.huella.data.Resultado
+import com.example.huella.data.Resumen
 import com.example.huella.data.Solicitud
 import com.example.huella.data.SolicitudRequest
 import com.example.huella.data.llamar
@@ -33,6 +34,17 @@ class SolicitudesViewModel : ViewModel() {
             if (refrescar) refrescando = true else lista = null
             lista = llamar { Api.servicio.solicitudes(orden, null) }
             refrescando = false
+        }
+    }
+
+    // HU-15: panel de la fundación
+    var resumen by mutableStateOf<Resultado<Resumen>?>(null)
+        private set
+
+    fun cargarResumen() {
+        viewModelScope.launch {
+            resumen = null
+            resumen = llamar { Api.servicio.resumen() }
         }
     }
 

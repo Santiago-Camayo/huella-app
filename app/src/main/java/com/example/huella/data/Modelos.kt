@@ -66,3 +66,12 @@ data class Solicitud(
     @SerializedName("usuario_correo") val usuarioCorreo: String,
     @SerializedName("usuario_telefono") val usuarioTelefono: String?,
 )
+
+// HU-15: cifras del panel de la fundación y sus 5 solicitudes más recientes
+data class Resumen(
+    val disponibles: Int,
+    val pendientes: Int,
+    @SerializedName("en_revision") val enRevision: Int,
+    @SerializedName("adopciones_completadas") val adopcionesCompletadas: Int,
+    val ultimas: List<Solicitud>,
+)

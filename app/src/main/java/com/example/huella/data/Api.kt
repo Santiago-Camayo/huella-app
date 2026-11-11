@@ -13,8 +13,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.DELETE
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -36,6 +38,20 @@ interface ApiService {
         @PartMap campos: Map<String, @JvmSuppressWildcards RequestBody>,
         @Part foto: MultipartBody.Part,
     ): Response<Animal>
+
+    // HU-18: mismo formulario; la foto es opcional (si es null, Retrofit no la envía)
+    @Multipart
+    @PUT("animales/{id}")
+    suspend fun editarAnimal(
+        @Path("id") id: Long,
+        @PartMap campos: Map<String, @JvmSuppressWildcards RequestBody>,
+        @Part foto: MultipartBody.Part?,
+    ): Response<Animal>
+    // HU-19: retira la publicación (la API responde 204 sin cuerpo)
+    @DELETE("animales/{id}") suspend fun retirarAnimal(@Path("id") id: Long): Response<Unit>
+
+    // HU-15
+    @GET("dashboard/resumen") suspend fun resumen(): Response<Resumen>
 
     @POST("solicitudes") suspend fun crearSolicitud(@Body datos: SolicitudRequest): Response<Solicitud>
     // orden = "antiguas" para la fundación; null deja las más recientes primero. animalId filtra por animal.

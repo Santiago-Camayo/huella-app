@@ -29,6 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.huella.data.Resultado
 import com.example.huella.data.Usuario
 import com.example.huella.ui.theme.Primario
 import com.example.huella.ui.theme.TextoSecundario
@@ -39,11 +40,12 @@ private val PESTANAS_ADOPTANTE = listOf(
     Pestana("inicio", "⌂", "Inicio"), Pestana("solicitudes", "▤", "Solicitudes"), Pestana("perfil", "♙", "Perfil"),
 )
 private val PESTANAS_FUNDACION = listOf(
-    Pestana("f/solicitudes", "📋", "Solicitudes"), Pestana("f/animales", "🐾", "Animales"), Pestana("f/cuenta", "👤", "Cuenta"),
+    Pestana("f/panel", "📊", "Dashboard"), Pestana("f/animales", "🐾", "Animales"),
+    Pestana("f/solicitudes", "📋", "Solicitudes"), Pestana("f/cuenta", "👤", "Cuenta"),
 )
 
 // HU-02: el rol decide a qué módulo entra el usuario
-private fun inicioDe(usuario: Usuario?) = if (usuario?.rol == "fundacion") "f/solicitudes" else "inicio"
+private fun inicioDe(usuario: Usuario?) = if (usuario?.rol == "fundacion") "f/panel" else "inicio"
 
 // Las pantallas de la app y cómo se llega de una a otra.
 @Composable
@@ -92,7 +94,7 @@ fun HuellaApp() {
                 composable("registro-fundacion") {
                     RegistroFundacionScreen(
                         auth,
-                        alRegistrar = { nav.navigate("f/solicitudes") { popUpTo("login") { inclusive = true } } },
+                        alRegistrar = { nav.navigate("f/panel") { popUpTo("login") { inclusive = true } } },
                         volver = { auth.error = null; nav.popBackStack() },
                     )
                 }
@@ -134,6 +136,9 @@ fun HuellaApp() {
                 composable("perfil") { PerfilScreen(auth, alCerrarSesion) }
 
                 // Fundación
+                composable("f/panel") {
+                    FundacionPanelScreen(solicitudes, auth.usuario?.nombre ?: "", abrir = { id -> nav.navigate("f/solicitud/$id") })
+                }
                 composable("f/solicitudes") {
                     FundacionSolicitudesScreen(solicitudes, abrir = { id -> nav.navigate("f/solicitud/$id") })
                 }
@@ -148,13 +153,21 @@ fun HuellaApp() {
                     )
                 }
                 composable("f/registrar") {
-                    RegistrarAnimalScreen(animales, volver = { nav.popBackStack() }, alRegistrar = { nav.popBackStack() })
+                    RegistrarAnimalScreen(animales, animal = null, volver = { nav.popBackStack() }, alGuardar = { nav.popBackStack() })
+                }
+                // HU-18: el mismo formulario con los datos del animal que se está viendo
+                composable("f/editar") {
+                    RegistrarAnimalScreen(
+                        animales, animal = (animales.detalle as? Resultado.Ok)?.dato,
+                        volver = { nav.popBackStack() }, alGuardar = { nav.popBackStack() },
+                    )
                 }
                 composable("f/animal/{id}", arguments = argumentoId) {
                     FundacionAnimalScreen(
                         animales, solicitudes, idDe(it),
                         volver = { nav.popBackStack() },
                         abrirSolicitud = { id -> nav.navigate("f/solicitud/$id") },
+                        editar = { nav.navigate("f/editar") },
                     )
                 }
                 composable("f/cuenta") { CuentaScreen(auth, alCerrarSesion) }
