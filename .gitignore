@@ -14,3 +14,7 @@
 .cxx
 local.properties
 .kotlin
+
+# Llave de firma del APK: nunca se sube a git
+firma/
+*.jks

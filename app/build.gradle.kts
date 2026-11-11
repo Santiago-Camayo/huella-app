@@ -1,6 +1,14 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+// Firma del APK de entrega. Los datos están en firma/keystore.properties, que no se sube a git.
+val firma = Properties().apply {
+    val archivo = rootProject.file("firma/keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
 }
 
 android {
@@ -19,11 +27,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("entrega") {
+            if (!firma.isEmpty) {
+                storeFile = rootProject.file(firma.getProperty("storeFile"))
+                storePassword = firma.getProperty("storePassword")
+                keyAlias = firma.getProperty("keyAlias")
+                keyPassword = firma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = false
             }
+            if (!firma.isEmpty) signingConfig = signingConfigs.getByName("entrega")
         }
     }
     compileOptions {
