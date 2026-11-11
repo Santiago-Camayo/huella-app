@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.huella.data.Api
 import com.example.huella.data.AuthResponse
+import com.example.huella.data.CambioPasswordRequest
 import com.example.huella.data.DatosAdmin
 import com.example.huella.data.DatosFundacion
 import com.example.huella.data.LoginRequest
@@ -85,6 +86,22 @@ class AuthViewModel : ViewModel() {
                 if (r.codigo == 401) error = "Tu sesión expiró. Inicia sesión de nuevo."
                 Arranque.SIN_SESION
             }
+        }
+    }
+
+    // HU-25: cambia la contraseña propia; después ya no se pide cambiar la temporal
+    fun cambiarPassword(actual: String, nueva: String, alExito: () -> Unit) {
+        viewModelScope.launch {
+            cargando = true
+            error = null
+            when (val r = llamar { Api.servicio.cambiarPassword(CambioPasswordRequest(actual, nueva)) }) {
+                is Resultado.Ok -> {
+                    usuario = usuario?.copy(debeCambiarPassword = false)
+                    alExito()
+                }
+                is Resultado.Error -> error = r.mensaje
+            }
+            cargando = false
         }
     }
 

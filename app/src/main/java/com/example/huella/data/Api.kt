@@ -28,6 +28,11 @@ interface ApiService {
     @POST("auth/login") suspend fun login(@Body datos: LoginRequest): Response<AuthResponse>
     @POST("auth/registro-fundacion") suspend fun registrarFundacion(@Body datos: RegistroFundacionRequest): Response<AuthResponse>
     @GET("usuarios/me") suspend fun me(): Response<Usuario>
+    @PUT("usuarios/me/password") suspend fun cambiarPassword(@Body datos: CambioPasswordRequest): Response<OkResponse>
+    // HU-24: equipo de la fundación (solo el administrador)
+    @GET("usuarios") suspend fun equipo(): Response<List<Usuario>>
+    @POST("usuarios") suspend fun crearEmpleado(@Body datos: CrearUsuarioRequest): Response<Usuario>
+    @PATCH("usuarios/{id}") suspend fun cambiarActivo(@Path("id") id: Long, @Body datos: ActivoRequest): Response<Usuario>
     @GET("animales") suspend fun animales(@Query("estado") estado: String?): Response<List<Animal>>
     @GET("animales/{id}") suspend fun animal(@Path("id") id: Long): Response<Animal>
 

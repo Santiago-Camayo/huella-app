@@ -22,7 +22,19 @@ data class Usuario(
     @SerializedName("fundacion_id") val fundacionId: Long?,
     @SerializedName("es_admin") val esAdmin: Boolean,
     @SerializedName("debe_cambiar_password") val debeCambiarPassword: Boolean,
+    val activo: Boolean?,
 )
+
+// HU-25: cambio de la contraseña propia
+data class CambioPasswordRequest(
+    @SerializedName("password_actual") val passwordActual: String,
+    @SerializedName("password_nueva") val passwordNueva: String,
+)
+data class OkResponse(val ok: Boolean)
+
+// HU-24: el administrador agrega un empleado (con contraseña temporal) o activa / desactiva una cuenta
+data class CrearUsuarioRequest(val nombre: String, val correo: String, val password: String)
+data class ActivoRequest(val activo: Boolean)
 
 // Respuesta de /auth/register y /auth/login
 data class AuthResponse(val token: String, val usuario: Usuario)

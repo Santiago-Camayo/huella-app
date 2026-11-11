@@ -45,7 +45,12 @@ private val PESTANAS_FUNDACION = listOf(
 )
 
 // HU-02: el rol decide a qué módulo entra el usuario
-private fun inicioDe(usuario: Usuario?) = if (usuario?.rol == "fundacion") "f/panel" else "inicio"
+// HU-25: con contraseña temporal, primero hay que cambiarla
+private fun inicioDe(usuario: Usuario?) = when {
+    usuario?.debeCambiarPassword == true -> "clave/obligatoria"
+    usuario?.rol == "fundacion" -> "f/panel"
+    else -> "inicio"
+}
 
 // Las pantallas de la app y cómo se llega de una a otra.
 @Composable
@@ -54,6 +59,7 @@ fun HuellaApp() {
     val auth: AuthViewModel = viewModel()
     val animales: AnimalesViewModel = viewModel()
     val solicitudes: SolicitudesViewModel = viewModel()
+    val equipo: EquipoViewModel = viewModel()
     val ruta = nav.currentBackStackEntryAsState().value?.destination?.route
 
     val alCerrarSesion = {
@@ -170,7 +176,26 @@ fun HuellaApp() {
                         editar = { nav.navigate("f/editar") },
                     )
                 }
-                composable("f/cuenta") { CuentaScreen(auth, alCerrarSesion) }
+                composable("f/cuenta") {
+                    CuentaScreen(
+                        auth, alCerrarSesion,
+                        cambiarPassword = { nav.navigate("clave") },
+                        irAEquipo = { nav.navigate("f/equipo") },
+                    )
+                }
+                composable("f/equipo") { EquipoScreen(equipo, auth.usuario, volver = { nav.popBackStack() }) }
+
+                // HU-25: cambio de contraseña obligatorio (temporal) o voluntario (desde Cuenta o Perfil)
+                composable("clave/obligatoria") {
+                    CambiarPasswordScreen(
+                        auth, obligatorio = true,
+                        alTerminar = { nav.navigate(inicioDe(auth.usuario)) { popUpTo(0) } },
+                        volver = alCerrarSesion,
+                    )
+                }
+                composable("clave") {
+                    CambiarPasswordScreen(auth, obligatorio = false, alTerminar = { nav.popBackStack() }, volver = { nav.popBackStack() })
+                }
             }
 
             // La barra de abajo solo se ve en las pantallas principales de cada módulo

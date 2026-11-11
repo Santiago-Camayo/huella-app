@@ -343,9 +343,9 @@ fun FundacionAnimalScreen(
     }
 }
 
-// Cuenta del personal de la fundación, con cerrar sesión
+// Cuenta del personal de la fundación: cambiar contraseña (HU-25), Equipo solo para el admin (HU-24) y cerrar sesión
 @Composable
-fun CuentaScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
+fun CuentaScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit, cambiarPassword: () -> Unit, irAEquipo: () -> Unit) {
     val u = auth.usuario
     var confirmar by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
@@ -363,6 +363,8 @@ fun CuentaScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
                 FilaDato("Teléfono") { Text(u?.telefono ?: "—", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
                 FilaDato("Rol") { Text(if (u?.esAdmin == true) "Administrador" else "Personal", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
             }
+            Boton("Cambiar contraseña", cambiarPassword, estilo = EstiloBoton.Secundario)
+            if (u?.esAdmin == true) Boton("Ir a Equipo", irAEquipo, estilo = EstiloBoton.Secundario)
             Boton("Cerrar sesión", { confirmar = true }, estilo = EstiloBoton.Neutro)
         }
     }
