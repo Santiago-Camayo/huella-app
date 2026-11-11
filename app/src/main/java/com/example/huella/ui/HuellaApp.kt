@@ -37,7 +37,8 @@ import kotlinx.coroutines.delay
 
 // Pestañas de cada módulo. Las demás del diseño (Explorar, Favoritos, Dashboard, Animales) llegan después.
 private val PESTANAS_ADOPTANTE = listOf(
-    Pestana("inicio", "⌂", "Inicio"), Pestana("solicitudes", "▤", "Solicitudes"), Pestana("perfil", "♙", "Perfil"),
+    Pestana("inicio", "⌂", "Inicio"), Pestana("favoritos", "♡", "Favoritos"),
+    Pestana("solicitudes", "▤", "Solicitudes"), Pestana("perfil", "♙", "Perfil"),
 )
 private val PESTANAS_FUNDACION = listOf(
     Pestana("f/panel", "📊", "Dashboard"), Pestana("f/animales", "🐾", "Animales"),
@@ -63,7 +64,8 @@ fun HuellaApp() {
     val ruta = nav.currentBackStackEntryAsState().value?.destination?.route
 
     val alCerrarSesion = {
-        auth.cerrarSesion() // HU-04
+        auth.cerrarSesion() // HU-04: borra el token y los favoritos del teléfono
+        animales.olvidarFavoritos()
         nav.navigate("login") { popUpTo(0) }
     }
     val idDe = { entrada: androidx.navigation.NavBackStackEntry -> entrada.arguments!!.getLong("id") }
@@ -139,7 +141,17 @@ fun HuellaApp() {
                 composable("solicitud/{id}", arguments = argumentoId) {
                     SolicitudScreen(solicitudes, idDe(it), volver = { nav.popBackStack() })
                 }
-                composable("perfil") { PerfilScreen(auth, alCerrarSesion) }
+                composable("favoritos") { FavoritosScreen(animales, abrir = { id -> nav.navigate("animal/$id") }) }
+                composable("perfil") {
+                    // Los accesos van a otras pestañas: se navega igual que desde la barra de abajo
+                    val irAPestana = { ruta: String -> nav.navigate(ruta) { popUpTo("inicio"); launchSingleTop = true } }
+                    PerfilScreen(
+                        auth, alCerrarSesion,
+                        irASolicitudes = { irAPestana("solicitudes") },
+                        irAFavoritos = { irAPestana("favoritos") },
+                        cambiarPassword = { nav.navigate("clave") },
+                    )
+                }
 
                 // Fundación
                 composable("f/panel") {

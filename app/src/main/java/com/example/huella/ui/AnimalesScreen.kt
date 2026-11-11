@@ -35,6 +35,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -138,27 +141,44 @@ fun AnimalesScreen(vm: AnimalesViewModel, nombre: String, abrir: (Long) -> Unit)
                         }
                     }
                 }
-                items(visibles, key = { it.id }) { TarjetaAnimal(it) { abrir(it.id) } }
+                items(visibles, key = { it.id }) {
+                    TarjetaAnimal(it, it.id in vm.favoritos, { vm.alternarFavorito(it.id) }) { abrir(it.id) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TarjetaAnimal(animal: Animal, alTocar: () -> Unit) {
+fun TarjetaAnimal(animal: Animal, favorito: Boolean, alternarFavorito: () -> Unit, alTocar: () -> Unit) {
+    // HU-13: si fue adoptado o retirado se ve atenuado y marcado "Ya no disponible"
+    val noDisponible = !animal.activo || animal.estado == "adoptado"
     Card(
         onClick = alTocar,
+        modifier = Modifier.alpha(if (noDisponible) 0.6f else 1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
     ) {
-        ImagenAnimal(animal, 56, Modifier.fillMaxWidth().height(110.dp))
+        Box {
+            ImagenAnimal(animal, 56, Modifier.fillMaxWidth().height(110.dp))
+            Corazon(favorito, alternarFavorito, Modifier.align(Alignment.TopEnd).padding(8.dp))
+        }
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp), Arrangement.spacedBy(4.dp)) {
             Text(animal.nombre, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Text("${animal.especieTexto()} · ${animal.edadTexto()}", fontSize = 14.sp, color = TextoSecundario)
-            Insignia(animal.estado)
+            Insignia(if (noDisponible) "no_disponible" else animal.estado)
         }
     }
+}
+
+// Botón redondo con el corazón para guardar o quitar de favoritos
+@Composable
+fun Corazon(favorito: Boolean, alternar: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(40.dp).background(Color.White.copy(alpha = 0.84f), CircleShape).clickable(onClick = alternar),
+        Alignment.Center,
+    ) { Text(if (favorito) "♥" else "♡", fontSize = 22.sp, color = Color(0xFFBE123C)) }
 }
 
 // Piezas compartidas con las demás pantallas

@@ -43,7 +43,7 @@ fun DetalleScreen(vm: AnimalesViewModel, id: Long, volver: () -> Unit, adoptar: 
     LaunchedEffect(id) { vm.cargarDetalle(id) }
 
     when (val d = vm.detalle) {
-        is Resultado.Ok -> Contenido(d.dato, volver, adoptar)
+        is Resultado.Ok -> Contenido(d.dato, volver, adoptar, d.dato.id in vm.favoritos) { vm.alternarFavorito(d.dato.id) }
         else -> Column(Modifier.fillMaxSize()) {
             BarraSuperior("Detalle", volver)
             if (d is Resultado.Error) ErrorConReintento(d.mensaje) { vm.cargarDetalle(id) } else Cargando()
@@ -52,13 +52,13 @@ fun DetalleScreen(vm: AnimalesViewModel, id: Long, volver: () -> Unit, adoptar: 
 }
 
 @Composable
-private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
+private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit, favorito: Boolean, alternarFavorito: () -> Unit) {
     val retirado = !a.activo // la fundación retiró la publicación
     val disponible = a.estado == "disponible"
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            Portada(a, volver)
+            Portada(a, volver, favorito, alternarFavorito)
 
             // Panel que sube un poco sobre la imagen, como en el diseño
             Surface(
@@ -105,7 +105,8 @@ private fun Contenido(a: Animal, volver: () -> Unit, adoptar: () -> Unit) {
 
 // Imagen grande del animal (emoji sobre su color) con el botón de volver flotante
 @Composable
-fun Portada(a: Animal, volver: () -> Unit) {
+// Con favorito != null muestra también el corazón (solo en el módulo del adoptante)
+fun Portada(a: Animal, volver: () -> Unit, favorito: Boolean? = null, alternarFavorito: () -> Unit = {}) {
     Box(Modifier.fillMaxWidth().height(260.dp)) {
         ImagenAnimal(a, 110, Modifier.fillMaxSize())
         Box(
@@ -113,6 +114,7 @@ fun Portada(a: Animal, volver: () -> Unit) {
                 .background(Color.White.copy(alpha = 0.84f), CircleShape).clickable(onClick = volver),
             Alignment.Center,
         ) { Text("‹", fontSize = 34.sp) }
+        favorito?.let { Corazon(it, alternarFavorito, Modifier.align(Alignment.TopEnd).padding(14.dp)) }
     }
 }
 

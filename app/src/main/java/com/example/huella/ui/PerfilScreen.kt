@@ -21,9 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.huella.ui.theme.TextoSecundario
 
-// Perfil del adoptante. Aquí vive el botón de cerrar sesión (HU-04).
+// HU-14: perfil del adoptante con sus datos y accesos a Mis solicitudes y Favoritos.
+// También cambiar contraseña (HU-25) y cerrar sesión (HU-04).
 @Composable
-fun PerfilScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
+fun PerfilScreen(
+    auth: AuthViewModel,
+    alCerrarSesion: () -> Unit,
+    irASolicitudes: () -> Unit,
+    irAFavoritos: () -> Unit,
+    cambiarPassword: () -> Unit,
+) {
     val u = auth.usuario
     var confirmar by remember { mutableStateOf(false) }
     if (confirmar) {
@@ -50,6 +57,9 @@ fun PerfilScreen(auth: AuthViewModel, alCerrarSesion: () -> Unit) {
                     )
                 }
             }
+            Boton("Mis solicitudes", irASolicitudes, estilo = EstiloBoton.Secundario)
+            Boton("Favoritos", irAFavoritos, estilo = EstiloBoton.Secundario)
+            Boton("Cambiar contraseña", cambiarPassword, estilo = EstiloBoton.Secundario)
             Boton("Cerrar sesión", { confirmar = true }, estilo = EstiloBoton.Neutro)
         }
     }

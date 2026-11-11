@@ -27,6 +27,41 @@ class AnimalesViewModel : ViewModel() {
     var deMiFundacion by mutableStateOf<Resultado<List<Animal>>?>(null)
         private set
 
+    // HU-13: favoritos guardados en el teléfono y su estado actual pedido a la API
+    var favoritos by mutableStateOf(Api.sesion.favoritos)
+        private set
+    var listaFavoritos by mutableStateOf<Resultado<List<Animal>>?>(null)
+        private set
+
+    fun alternarFavorito(id: Long) {
+        favoritos = if (id in favoritos) favoritos - id else favoritos + id
+        Api.sesion.favoritos = favoritos
+    }
+
+    // Pide cada favorito con GET /animales/{id} para saber si sigue disponible (incluye los retirados)
+    fun cargarFavoritos() {
+        viewModelScope.launch {
+            listaFavoritos = null
+            val animales = mutableListOf<Animal>()
+            for (id in favoritos) {
+                when (val r = llamar { Api.servicio.animal(id) }) {
+                    is Resultado.Ok -> animales += r.dato
+                    is Resultado.Error -> if (r.codigo != 404) {   // un 404 (ya no existe) simplemente no se muestra
+                        listaFavoritos = r
+                        return@launch
+                    }
+                }
+            }
+            listaFavoritos = Resultado.Ok(animales)
+        }
+    }
+
+    // Al cerrar sesión: Sesion.cerrar() ya los borró del teléfono; aquí se olvidan los de memoria
+    fun olvidarFavoritos() {
+        favoritos = emptySet()
+        listaFavoritos = null
+    }
+
     var enviando by mutableStateOf(false)
         private set
     var error by mutableStateOf<String?>(null)

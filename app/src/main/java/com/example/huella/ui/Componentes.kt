@@ -184,6 +184,7 @@ fun Chip(texto: String, activo: Boolean, onClick: () -> Unit) {
 // Nombre para mostrar de un estado de animal o de solicitud
 fun nombreEstado(estado: String): String = when (estado) {
     "en_revision" -> "En revisión"
+    "no_disponible" -> "Ya no disponible"
     else -> estado.replaceFirstChar { it.uppercase() }
 }
 
@@ -198,7 +199,7 @@ fun Insignia(estado: String) {
         "apartado", "pendiente" -> ambar to "◔"
         "en_revision" -> ambar to "◉"
         "rechazada" -> (Color(0xFFFEE2E2) to Color(0xFF991B1B)) to "✕"
-        "cancelada", "retirado" -> (Color(0xFFE2E8F0) to Color(0xFF475569)) to "—"
+        "cancelada", "retirado", "no_disponible" -> (Color(0xFFE2E8F0) to Color(0xFF475569)) to "—"
         else -> azul to "♥" // adoptado, finalizada
     }
     val (fondo, letra) = colores
